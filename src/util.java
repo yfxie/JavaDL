@@ -108,7 +108,7 @@ public class util {
     static double[][] repmat(double[][] a,int x,int y){
         double[][] result = new double[a.length*x][a[0].length*y];
         for(int i = 0; i<result.length; i++){
-            for(int j=0;j<result[0].length;j++){
+            for(int j=0;j<result[i].length;j++){
                 int row = i % a.length;
                 int col = j % a[0].length;
                 result[i][j]= a[row][col];
