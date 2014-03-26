@@ -238,7 +238,7 @@ public class cnn {
 
 
             if (net.layers[l].type=='c'){
-                if(net.layers[l].a==null)
+
                 net.layers[l].a = new double[net.layers[l].outputmaps][][][];
                 for(int j = 0; j<net.layers[l].outputmaps; j++){
 
@@ -259,8 +259,8 @@ public class cnn {
                 }
                 inputmaps = net.layers[l].outputmaps;
             }else if(net.layers[l].type == 's'){
-                if(net.layers[l].a==null)
-                    net.layers[l].a = new double[inputmaps][][][];
+
+                net.layers[l].a = new double[inputmaps][][][];
                 for(int j =0;j<inputmaps;j++){
 
                         z = util.conv_valid(net.layers[l-1].a[j],util.divide(util.ones(net.layers[l].scale), Math.pow(net.layers[l].scale, 2.0)) );
