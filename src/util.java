@@ -1,8 +1,5 @@
 import java.util.Random;
 
-/**
- * Created by JSON on 2014/3/20.
- */
 public class util {
     public static void main(String[] arg){
         double[][] test={
@@ -48,6 +45,11 @@ public class util {
 
         System.out.println();
     }
+    public static void printMatrix(double[] m){
+        for(int i=0;i<m.length;i++)
+            System.out.print(m[i]+" ");
+        System.out.println();
+    }
     public static void printMatrix(double[][] m){
         for(int i = 0; i < m.length; i++){
             for(int k=0; k < m[i].length; k++){
@@ -65,10 +67,10 @@ public class util {
         shuffleArray(array);
         return array;
     }
-    static double[][] rot180(double[][] a){
+    static double[][] rot180(double[][] a){ //正確
         return flipdim(flipdim(a,1),2);
     }
-    static double[][] flipdim(double[][] a,int deg){
+    static double[][] flipdim(double[][] a,int deg){ //正確
         int row = a.length;
         int col = a[0].length;
         double[][] result = new double[row][col];
@@ -98,7 +100,7 @@ public class util {
         double[][] output = new double[x][y];
         for(int i =0; i<size; i++){
 
-            output[i%x][i/x] = a[i/(a2*a3)][(i/a3)%a2][i%a3];
+            output[i%x][i/x] = a[i/(a2*a3)][i%a2][(i/a2)%a3];
         }
         return output;
     }
@@ -114,20 +116,39 @@ public class util {
         }
         return result;
     }
-    static double[][] dotMutiply(double a[][],double[][] b){
-
-        int row = a.length;
-        int col = a[0].length;
-        int rowb=b.length;
-        int colb=b[0].length;
-        if ( row != rowb || col!=colb ) {
+    static double[][][] dotMutiply(double a[][][], double[][][] b){
+        int rowa = a.length;
+        int rowb = b.length;
+        if(rowa != rowb){
             throw new IllegalArgumentException("大小不一致");
         }
-        double[][] result = new double[row][col];
-        for(int i =0; i<row; i++){
-            for(int j=0;j<col;j++){
-                result[i][j] = a[i][j]*b[i][j];
-            }
+        double[][][] result = new double[rowa][][];
+        for(int i =0;i<rowa;i++){
+            result[i] = dotMutiply(a[i],b[i]);
+        }
+        return result;
+    }
+    static double[][] dotMutiply(double a[][],double[][] b){
+        int rowa = a.length;
+        int rowb = b.length;
+        if(rowa != rowb){
+            throw new IllegalArgumentException("大小不一致");
+        }
+        double[][] result = new double[rowa][];
+        for(int i =0;i<rowa;i++){
+            result[i] = dotMutiply(a[i],b[i]);
+        }
+        return result;
+    }
+    static  double[] dotMutiply(double[] a,double[] b){
+        int rowa = a.length;
+        int rowb = b.length;
+        if(rowa != rowb){
+            throw new IllegalArgumentException("大小不一致");
+        }
+        double[] result = new double[rowa];
+        for(int i =0;i<rowa;i++){
+            result[i] = a[i]*b[i];
         }
         return result;
     }
@@ -180,15 +201,36 @@ public class util {
 
         return resultant;
     }
+    static double[][][] diff(double a,double[][][] b){
+        int row = b.length;
+        double[][][] result = new double[row][][];
+        for(int i =0; i<row; i++){
+            result[i] = diff(a,b[i]);
+        }
+        return result;
 
+    }
     static double[][] diff(double a,double[][] b){
         int row = b.length;
-        int col = b[0].length;
-        double[][] result = new double[row][col];
+        double[][] result = new double[row][];
         for(int i =0; i<row; i++){
-            for(int j=0;j<col;j++){
-                result[i][j] = a - b[i][j];
-            }
+            result[i] = diff(a,b[i]);
+        }
+        return result;
+    }
+    static double[] diff(double a,double[] b){
+        int row = b.length;
+        double[] result = new double[row];
+        for(int i=0;i<row;i++){
+            result[i] = a-b[i];
+        }
+        return result;
+    }
+    static double[][][] expand(double[][][] a,int x,int y){
+        int row = a.length;
+        double[][][] result = new double[row][][];
+        for(int i =0;i<row;i++){
+            result[i] = expand(a[i],x,y);
         }
         return result;
     }
@@ -203,7 +245,6 @@ public class util {
     }
 
     static double[][] subMatrix(double[][] a,int row_start,int row_end, int col_start,int col_end){
-        //System.out.println(row_start+" "+row_end+" "+col_start+" "+col_end);
         double[][] result = new double[row_end-row_start][col_end-col_start];
         for(int i=row_start; i <row_end; i++){
             for(int j = col_start; j<col_end;j++){
@@ -223,7 +264,7 @@ public class util {
         }
         int size = row*col;
         for(int i =0;i<size;i++){
-            result[i/(level2*level3)][(i/level3)%level2][i%level3]=a[i%row][i/row];
+            result[i/(level2*level3)][(i/level3)%level2][i%level3] = a[i/col][i%col];
         }
         return result;
     }
@@ -314,22 +355,27 @@ public class util {
         return result;
     }
     static double sum(double[][] a){
-        int row = a.length;
-        int col = a[0].length;
         double result = 0.0;
+        int row = a.length;
         for(int i = 0; i<row; i++){
-            for(int j=0; j<col; j++){
-                result += a[i][j];
-            }
+            result += sum(a[i]);
         }
         return result;
     }
-    static double[][] pow(double[][] a, double p){
+    static double sum(double[] a){
+        double result = 0.0;
+        int row=a.length;
+        for(int i=0;i<row;i++){
+            result+=a[i];
+        }
+        return result;
+    }
+    static double[][] dotPow(double[][] a, double p){
         int row = a.length;
-        int col = a[0].length;
-        double[][] result = new double[row][col];
+        double[][] result = new double[row][];
         for(int i = 0; i<row; i++){
-            for(int j=0; j<col; j++){
+            result[i] = new double[a[i].length];
+            for(int j=0; j<a[i].length; j++){
                 result[i][j] = Math.pow(a[i][j],p);
             }
         }
@@ -390,19 +436,7 @@ public class util {
             ar[i] = a;
         }
     }
-    public static double singlePixelConvolution(double[][] input,
-                                                int x, int y,
-                                                double[][] k,
-                                                int kernelWidth,
-                                                int kernelHeight) {
-        double output = 0;
-        for (int i = 0; i < kernelWidth; ++i) {
-            for (int j = 0; j < kernelHeight; ++j) {
-                output = output + (input[x + i][y + j] * k[i][j]);
-            }
-        }
-        return output;
-    }
+
     static void printForMatlab(double[][][] train_x){
         int level1= train_x.length;
         int level2= train_x[0].length;
@@ -422,40 +456,45 @@ public class util {
         }
         return result;
     }
-    static double[][][] convnfull(double[][][] a,double[][] kernel){
+    static double[][][] convnfull(double[][][] a,double[][] kernel){ //正確
         double[][][] result = new double[a.length][][];
         for(int i =0;i<result.length;i++)
             result[i] = convnfull(a[i],kernel);
         return result;
     }
-    static double[][] convnfull(double[][] a, double[][] kernel){
-        double[][] result  = new double[a.length+(kernel.length-1)*2][a[0].length+(kernel[0].length-1)*2];
-        double[][] result2  = new double[a.length+(kernel.length-1)][a[0].length+(kernel[0].length-1)];
-        for(int i =0;i<a.length;i++){
-            for(int j=0;j<a[i].length;j++){
-
-                result[kernel.length-1+i][kernel[0].length-1+j] =a[i][j];
-            }
+    static double[][] convnfull(double[][]a,double[][] kernel){
+        int krow = kernel.length;
+        int arow = kernel.length;
+        double[][] result = new double[a.length+kernel.length-1][a[0].length+kernel[0].length-1];
+        double[][][] tmp_result = new double[kernel.length][][];
+        for(int i =0;i<tmp_result.length;i++){
+            tmp_result[i] = convnfull(a,kernel[i]);
         }
-        for(int i =0;i<result.length;i++){
-            for(int j =0;j<result[i].length;j++){
-                double sum=0.0;
-                for(int k1=0;k1<kernel.length;k1++){
-                    for(int k2=0;k2<kernel[0].length;k2++){
-                        int x = k1+i;
-                        int y = k2+j;
-                        if(x<result.length && y<result[0].length){
-                            sum += result[x][y]*kernel[k1][k2];
-                        }
-                    }
+        for(int i =0;i<tmp_result.length;i++){
+            for(int j=0;j<tmp_result[i].length;j++){
+                for(int t=0;t<tmp_result[i][j].length;t++){
+                    result[i+j][t]+=tmp_result[i][j][t];
                 }
-                if(i<result2.length && j<result2[0].length)
-                    result2[i][j]=sum;
             }
         }
+        return result;
+    }
+    static double[][] convnfull(double[][] a,double[] kernel){
+        double[][] result = new double[a.length][];
+        for(int i =0;i<result.length;i++){
+            result[i] = convnfull(a[i],kernel);
+        }
+        return result;
+    }
+    static double[] convnfull(double[] a,double[] kernel){
 
-
-        return result2;
+        double[] result = new double[a.length+kernel.length-1];
+        for(int i=0;i<kernel.length;i++){
+            for(int j =0;j<a.length;j++){
+                result[j+i] += a[j]*kernel[i];
+            }
+        }
+        return result;
     }
     static double[][] add(double[][] a,double[][] b){
         int a1 = a.length;
@@ -502,48 +541,46 @@ public class util {
         }
         return result;
     }
-    static double[][][] conv_valid(double[][][] input, double[][] kernel){
-        double[][][] result = new double[input.length][][];
-        for(int i =0; i<input.length;i++){
-            result[i] = conv_valid(input[i], kernel);
+    static double[][] conv_valid(double[][][] a,double[][][] b){
+
+        double[][][] result = new double[a.length-b.length+1][a[0].length-b[0].length+1][a[0][0].length-b[0][0].length+1];
+        for(int r =0;r<result.length;r++){
+            for(int c=0;c<result[0].length;c++){
+                for(int z=0;z<result[0][0].length;z++){
+                    for(int rb=b.length-1;rb>=0;rb--){
+                        for(int cb=b[0].length-1;cb>=0;cb--){
+                            for(int cz=b[0][0].length-1;cz>=0;cz--)
+                                result[r][c][z] = result[r][c][z]+a[r+b.length-rb-1][c+b[0].length-cb-1][z+b[0][0].length-cz-1]*b[rb][cb][cz];
+                        }
+                    }
+                }
+
+            }
+        }
+
+        return result[0];
+
+    }
+    static double[][][] conv_valid(double[][][] a,double[][] b){
+        double[][][] result = new double[a.length][][];
+        for(int i=0;i<a.length;i++)
+            result[i]=conv_valid(a[i],b);
+        return result;
+    }
+    static double[][] conv_valid(double[][] a,double[][] b){
+        double[][] result = new double[a.length-b.length+1][a[0].length-b[0].length+1];
+        for(int r =0;r<result.length;r++){
+            for(int c=0;c<result[0].length;c++){
+                for(int rb=b.length-1;rb>=0;rb--){
+                    for(int cb=b[0].length-1;cb>=0;cb--){
+                        result[r][c] = result[r][c]+a[r+b.length-rb-1][c+b[0].length-cb-1]*b[rb][cb];
+                    }
+                }
+            }
         }
         return result;
     }
 
-    static double[][] conv_valid(double[][][] input,double[][][] kernel){
-        double[][] result = null;
-        for(int i =0;i<input.length;i++){
-            if(result==null){
-
-                result = conv_valid(input[i], kernel[i]);
-            }else{
-
-                result = add(result,conv_valid(input[i], kernel[i]));
-            }
-        }
-        return result;
-    }
-    static double[][] conv_valid(double[][] input,double[][] kernel) {
-        int width = input.length;
-        int height = input[0].length;
-        int kernelWidth = kernel[0].length;
-        int kernelHeight = kernel.length;
-        int smallWidth = width - kernelWidth + 1;
-        int smallHeight = height - kernelHeight + 1;
-        double[][] output = new double[smallWidth][smallHeight];
-        for (int i = 0; i < smallWidth; ++i) {
-            for (int j = 0; j < smallHeight; ++j) {
-                output[i][j] = 0;
-            }
-        }
-        for (int i = 0; i < smallWidth; ++i) {
-            for (int j = 0; j < smallHeight; ++j) {
-                output[i][j] = singlePixelConvolution(input, i, j, kernel,
-                        kernelWidth, kernelHeight);
-            }
-        }
-        return output;
-    }
 
     static double[][] ones(int size){
         double[][] result = new double[size][size];

@@ -39,7 +39,7 @@ public class cnn {
                 for(int j = 0; j<layers[l].outputmaps; j++){
                     int fan_in = inputmaps * layers[l].kernelsize * layers[l].kernelsize;
                     for(int i = 0; i<inputmaps;i++){
-                        layers[l].k[i][j] = util.multiply(util.diff(util.rand(net.layers[l].kernelsize),0.5),2.0*Math.sqrt(6.0/(fan_in+fan_out)));
+                        layers[l].k[i][j] = util.multiply(util.diff(util.rand(net.layers[l].kernelsize),0.5),2.0*Math.sqrt(6.0/(double)(fan_in+fan_out)));
                     }
                     layers[l].b[j] = 0;
                 }
@@ -112,9 +112,7 @@ public class cnn {
 
             for(int l = 0; l<numbatches; l++){
                 int[] partKK = new int[opt.batchsize];
-
                 System.arraycopy(kk,l* opt.batchsize,partKK,0,opt.batchsize);
-
                 double[][][] batch_x = util.copyArray(x,partKK);
 
                 double[][] batch_y = new double[y.length][opt.batchsize];
@@ -132,7 +130,7 @@ public class cnn {
                     net.rL[0] = net.L;
                 }
                 double[] tmp = net.rL;
-                net.rL = new double[net.rL.length+1];
+                net.rL = new double[tmp.length+1];
                 for(int k=0;k<net.rL.length-1;k++){
                     net.rL[k]=tmp[k];
                 }
@@ -158,13 +156,12 @@ public class cnn {
     }
     public static cnn_net cnnbp(cnn_net net, double[][] y){
         int n =  net.layers.length;
-
         net.e = util.diff(net.o,y);
-        net.L = 1.0/2.0 * util.sum(util.pow(net.e,2.0)) / net.e[0].length;
+        net.L = 1.0/2.0 * util.sum(util.dotPow(net.e, 2.0)) / net.e[0].length;
 
         net.od = util.dotMutiply(net.e,util.dotMutiply(net.o,util.diff(1.0,net.o)));
-
         net.fvd = util.multiply(util.transpose(net.ffW),net.od);
+
         if(net.layers[n-1].type=='c'){
             net.fvd = util.dotMutiply(net.fvd, util.dotMutiply(net.fv,util.diff(1.0,net.fv)) );
         }
@@ -173,32 +170,33 @@ public class cnn {
         int sa2 = net.layers[n-1].a[0][0].length;
         int sa3 = net.layers[n-1].a[0][0][0].length;
         int fvnum = sa2*sa3;
-        net.layers[n-1].d = new double[net.layers[n-1].a.length][][][];
+        if(net.layers[n-1].d==null)
+            net.layers[n-1].d = new double[net.layers[n-1].a.length][][][];
 
         for(int j = 0; j < net.layers[n-1].a.length; j++){
+
             net.layers[n-1].d[j] = util.reshape( util.subMatrix(net.fvd, j*fvnum ,(j+1)*fvnum,0,net.fvd[0].length), sa1,sa2,sa3);
+
+
         }
 
         for(int l = n-2; l>=0; l--){
             if(net.layers[l].type=='c'){
-
-
-                net.layers[l].d = new double[net.layers[l].a.length][][][];
+                if(net.layers[l].d==null)
+                    net.layers[l].d = new double[net.layers[l].a.length][][][];
                 for(int j = 0; j<net.layers[l].a.length; j++){
-                    net.layers[l].d[j]= new double[net.layers[l + 1].d[j].length][][];
-                    for(int i = 0; i<net.layers[l + 1].d[j].length;i++){
-                        double[][] tmp;
-                        tmp = util.divide(util.expand(net.layers[l + 1].d[j][i], net.layers[l + 1].scale, net.layers[l + 1].scale),Math.pow(net.layers[l+1].scale,2.0));
-                        net.layers[l].d[j][i] = util.dotMutiply( util.dotMutiply(net.layers[l].a[j][i],util.diff(1,net.layers[l].a[j][i])),tmp );
-                    }
+                    double[][][] tmp = util.divide(util.expand(net.layers[l+1].d[j],net.layers[l + 1].scale,net.layers[l + 1].scale), Math.pow(net.layers[l+1].scale,2.0));
+                    net.layers[l].d[j] = util.dotMutiply( net.layers[l].a[j], util.dotMutiply( util.diff(1.0,net.layers[l].a[j]), tmp ) );
                 }
             }else if(net.layers[l].type=='s'){
-
-                    net.layers[l].d = new double[net.layers[l].a.length][][][];
+                    if(net.layers[l].d==null)
+                        net.layers[l].d = new double[net.layers[l].a.length][][][];
                     for(int i=0; i <net.layers[l].a.length;i++){
                         double[][][] z = new double[net.layers[l].a[0].length][net.layers[l].a[0][0].length][net.layers[l].a[0][0][0].length];
                         for(int j = 0; j<net.layers[l+1].a.length;j++){
-                            z = util.add(z,util.convnfull(net.layers[l + 1].d[j],util.rot180(net.layers[l + 1].k[i][j])));
+
+                           z = util.add(z,util.convnfull(net.layers[l + 1].d[j],util.rot180(net.layers[l + 1].k[i][j])));
+
                         }
                         net.layers[l].d[i]=z;
                     }
@@ -213,10 +211,9 @@ public class cnn {
 
                 for(int j =0;j<net.layers[l].a.length; j++){
                     for(int i =0; i<net.layers[l-1].a.length; i++){
-
-                        net.layers[l].dk[i][j] = util.multiply(util.conv_valid(util.flipall(net.layers[l - 1].a[i]),net.layers[l].d[j]),net.layers[l].d[j].length);
+                        net.layers[l].dk[i][j] = util.divide(util.conv_valid(util.flipall(net.layers[l - 1].a[i]),net.layers[l].d[j]),net.layers[l].d[j].length);
                     }
-                    net.layers[l].db[j] = util.sum(net.layers[l].d[j])/net.layers[l].d[j].length;
+                    net.layers[l].db[j] = util.sum(net.layers[l].d[j]) / (double) net.layers[l].d[j].length;
                 }
             }
         }
@@ -228,30 +225,27 @@ public class cnn {
     public static cnn_net cnnff(cnn_net net,double[][][] x){
 
         int n = net.layers.length;
-        if(net.layers[0].a==null) {
+        if(net.layers[0].a ==null){
             net.layers[0].a = new double[1][][][];
         }
         net.layers[0].a[0] = x;
         int inputmaps = 1;
-        double[][][] z;
+
+
         for(int l = 1; l<n;l++){
-
-
             if (net.layers[l].type=='c'){
-
-                net.layers[l].a = new double[net.layers[l].outputmaps][][][];
+                if(net.layers[l].a==null)
+                    net.layers[l].a = new double[net.layers[l].outputmaps][][][];
                 for(int j = 0; j<net.layers[l].outputmaps; j++){
 
 
-                    z  = new double
+                    double[][][] z  = new double
                             [net.layers[l-1].a[0].length]
-                            [net.layers[l-1].a[0][0].length-net.layers[l].kernelsize+1]
-                            [net.layers[l-1].a[0][0][0].length-net.layers[l].kernelsize+1];
+                            [net.layers[l-1].a[0][0].length-(net.layers[l].kernelsize-1)]
+                            [net.layers[l-1].a[0][0][0].length-(net.layers[l].kernelsize-1)];
 
                     for(int i = 0 ; i<inputmaps; i++){
-                        for(int t = 0; t< z.length; t++){
-                            z[t] = util.add(z[t],util.conv_valid(net.layers[l - 1].a[i][t], net.layers[l].k[i][j]));
-                        }
+                            z = util.add(z,util.conv_valid(net.layers[l - 1].a[i], net.layers[l].k[i][j]));
                     }
 
                 net.layers[l].a[j] = util.sigm(util.add(z,net.layers[l].b[j]));
@@ -260,10 +254,10 @@ public class cnn {
                 inputmaps = net.layers[l].outputmaps;
             }else if(net.layers[l].type == 's'){
 
-                net.layers[l].a = new double[inputmaps][][][];
+                if(net.layers[l].a==null)
+                    net.layers[l].a = new double[inputmaps][][][];
                 for(int j =0;j<inputmaps;j++){
-
-                        z = util.conv_valid(net.layers[l-1].a[j],util.divide(util.ones(net.layers[l].scale), Math.pow(net.layers[l].scale, 2.0)) );
+                        double[][][] z = util.conv_valid(net.layers[l-1].a[j], util.divide(util.ones(net.layers[l].scale), Math.pow(net.layers[l].scale, 2.0)) );
                         int step = net.layers[l].scale;
                         double[][][] tmp = new double[z.length][z[0].length/step+1][z[0][0].length/step+1];
                         for(int i =0;i<z.length;i++){
@@ -273,7 +267,6 @@ public class cnn {
                                 }
                             }
                         }
-
                         net.layers[l].a[j] = tmp;
 
 
@@ -283,33 +276,28 @@ public class cnn {
             }
 
         }
-        net.fv=null;
-        int sa0 = net.layers[n-1].a.length;
 
-        ArrayList<double[][]> tmpList = new ArrayList<double[][]>();
-        int fvsize = 0;
-        for(int j = 0; j<sa0; j++){
+        net.fv=null;
+        for(int j=0;j<net.layers[n-1].a.length;j++){
             int sa1 = net.layers[n-1].a[j].length;
             int sa2 = net.layers[n-1].a[j][0].length;
             int sa3 = net.layers[n-1].a[j][0][0].length;
+            if(net.fv==null){
 
-            double[][] tmp = util.reshape(net.layers[n-1].a[j],sa2*sa3,sa1);
-            fvsize+=sa2*sa3;
-            tmpList.add(tmp);
-        }
-
-        net.fv=new double[fvsize][];
-        int t=0;
-        for (double[][] tmp : tmpList) {
-            for (double[] aTmp : tmp) {
-                net.fv[t++] = aTmp;
+                net.fv = util.reshape(net.layers[n-1].a[j],sa2*sa3,sa1);
+            }else{
+                double[][] tmp = net.fv;
+                double[][] tmp2 = util.reshape(net.layers[n-1].a[j],sa2*sa3,sa1);;
+                net.fv = new double[tmp.length+sa2*sa3][];
+                for(int i =0;i<tmp.length;i++){
+                    net.fv[i] = tmp[i];
+                }
+                for(int i =0;i<tmp2.length;i++){
+                    net.fv[i+tmp.length] = tmp2[i];
+                }
             }
         }
-
-        double[][] net_o_tmp = util.multiply(net.ffW,net.fv);
-        double[][] repmat = util.repmat(net.ffb,1,net.fv[0].length);
-
-        net.o = util.sigm(util.add(net_o_tmp,repmat));
+        net.o = util.sigm(util.add(util.multiply(net.ffW,net.fv),util.repmat(net.ffb,1,net.fv[0].length)));
         return net;
     }
 
