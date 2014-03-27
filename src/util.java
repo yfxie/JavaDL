@@ -72,14 +72,16 @@ public class util {
     }
     static double[][] flipdim(double[][] a,int deg){ //正確
         int row = a.length;
-        int col = a[0].length;
-        double[][] result = new double[row][col];
+
+        double[][] result = new double[row][];
         if(deg==1){
             for(int i=0;i<row;i++){
                 result[i] = a[row-i-1];
             }
         }else if(deg==2){
             for(int i=0;i<row;i++){
+                int col = a[i].length;
+               result[i] = new double[col];
                 for(int j =0;j<col;j++){
                     result[i][j] = a[i][col-j-1];
                 }
@@ -104,7 +106,7 @@ public class util {
         }
         return output;
     }
-    // Ex: repmat([1 2;3 4],1,2) => [1 2 1 2;3 4 3 4]
+
     static double[][] repmat(double[][] a,int x,int y){
         double[][] result = new double[a.length*x][a[0].length*y];
         for(int i = 0; i<result.length; i++){
@@ -157,7 +159,6 @@ public class util {
         double[][][] result = new double[row][][];
         for(int i =0;i<row;i++){
             result[i] = multiply(a[i],b);
-
         }
         return result;
     }
@@ -171,7 +172,6 @@ public class util {
     }
     static double[][] multiply(double a[][],double b){
         int row = a.length;
-        int col = a[0].length;
         double[][] result = new double[row][];
         for(int i =0; i<row; i++){
             result[i] = multiply(a[i],b);
@@ -279,35 +279,41 @@ public class util {
         return result;
     }
     static double[] diff(double[] a, double[] b){
-        int row = a.length;
-        double[] result = new double[row];
-        for(int i =0;i<row;i++){
+        int rowa = a.length;
+        int rowb = b.length;
+        if(rowa!=rowb){
+            throw new IllegalArgumentException("大小不一致");
+        }
+        double[] result = new double[rowa];
+        for(int i =0;i<rowa;i++){
             result[i] = a[i]-b[i];
         }
         return result;
     }
     static double[][] diff(double[][] a,double b){
         int row = a.length;
-        int col = a[0].length;
-        double[][] result = new double[row][col];
+
+        double[][] result = new double[row][];
         for(int i =0; i<row; i++){
-            for(int k=0;k<col;k++){
-                result[i][k] = a[i][k]-b;
-            }
+            result[i] = diff(a[i],b);
         }
         return result;
     }
+    static double[] diff(double[]a,double b){
+        int row =a.length;
+        double[] result = new double[row];
+        for(int i=0;i<row;i++)
+            result[i] = a[i]-b;
+        return result;
+    }
     static double[][] diff(double[][] a, double[][] b){
-        int row = a.length;
-        int col = a[0].length;
+        int rowa = a.length;
         int rowb = b.length;
-        int colb = b[0].length;
-        if(row!=rowb || col!=colb){
-            System.out.println("大小不一致");
-            return null;
+        if(rowa!=rowb){
+            throw new IllegalArgumentException("大小不一致");
         }
-        double[][] result = new double[row][col];
-        for(int i =0; i<row; i++){
+        double[][] result = new double[rowa][];
+        for(int i =0; i<rowa; i++){
             result[i] = diff(a[i],b[i]);
         }
         return result;
@@ -384,30 +390,26 @@ public class util {
     static double sigm(double p){
         return 1.0/(1.0+Math.exp(-p));
     }
+    static double[] sigm(double[] a){
+        int row = a.length;
+        double[] result = new double[row];
+        for(int i =0;i<row;i++)
+            result[i] = sigm(a[i]);
+        return result;
+    }
     static double[][] sigm(double[][] a){
-
         int row =a.length;
-        int col = a[0].length;
-        double[][] result = new double[row][col];
+        double[][] result = new double[row][];
         for(int i=0;i<row;i++){
-            for(int j =0;j<col;j++){
-                result[i][j] = sigm(a[i][j]);
-            }
+            result[i] = sigm(a[i]);
         }
         return result;
     }
     static double[][][] sigm(double[][][] a){
-        int a1 = a.length;
-        int a2 = a[0].length;
-        int a3 = a[0][0].length;
-        double[][][] result = new double[a1][a2][a3];
-        for(int i =0; i<a1;i++){
-            for(int j=0;j<a2;j++){
-                for(int k=0;k<a3;k++){
-                    result[i][j][k] = sigm(a[i][j][k]);
-                }
-            }
-        }
+        int row = a.length;
+        double[][][] result = new double[row][][];
+        for(int i=0;i<row;i++)
+            result[i]=sigm(a[i]);
         return result;
     }
     static double[][][] copyArray(double[][][] x,int[] index){
@@ -424,18 +426,7 @@ public class util {
         }
         return result;
     }
-    static void shuffleArray(int[] ar)
-    {
-        Random rnd = new Random();
-        for (int i = ar.length - 1; i > 0; i--)
-        {
-            int index = rnd.nextInt(i + 1);
-            // Simple swap
-            int a = ar[index];
-            ar[index] = ar[i];
-            ar[i] = a;
-        }
-    }
+
 
     static void printForMatlab(double[][][] train_x){
         int level1= train_x.length;
@@ -446,10 +437,10 @@ public class util {
         }
     }
     static double[][] flipall(double[][] a){
-        return flipdim(flipdim(a, 1), 2);
+        return flipdim(flipdim(a,1),2);
+
     }
     static double[][][] flipall(double[][][] a){
-
         double[][][] result = new double[a.length][][];
         for(int i=0;i<a.length;i++){
             result[a.length-i-1] = flipall(a[i]);
@@ -496,49 +487,58 @@ public class util {
         }
         return result;
     }
+    static double[][][] add(double[][][]a,double[][][]b){
+        int rowa = a.length;
+        int rowb = b.length;
+        if(rowa!=rowb){
+            new IllegalArgumentException("大小不一致");
+        }
+        double[][][] result = new double[rowa][][];
+        for(int i =0;i<rowa;i++)
+            result[i] = add(a[i],b[i]);
+        return result;
+    }
     static double[][] add(double[][] a,double[][] b){
-        int a1 = a.length;
-        int a2 = a[0].length;
-        int b1 = b.length;
-        int b2 = b[0].length;
-        if(a1!=b1 || a2!=b2){
-            throw new IllegalArgumentException("a:"+a1+"x"+a2+" b:"+b1+"x"+b2);
-
+        int rowa = a.length;
+        int rowb = b.length;
+        if(rowa!=rowb){
+            new IllegalArgumentException("大小不一致");
         }
-        double[][] result = new double[a1][a2];
-        for(int i=0;i<a1;i++){
-            for(int j=0;j<a2;j++){
-                result[i][j] = a[i][j]+b[i][j];
-            }
+        double[][] result = new double[rowa][];
+        for(int i =0;i<rowa;i++)
+            result[i] = add(a[i],b[i]);
+        return result;
+    }
+    static double[] add(double[] a,double[] b){
+        int rowa = a.length;
+        int rowb = b.length;
+        if(rowa!=rowb){
+            new IllegalArgumentException("大小不一致");
         }
+        double[] result = new double[rowa];
+        for(int i =0;i<rowa;i++)
+            result[i] = a[i]+b[i];
         return result;
     }
     static double[][][] add(double[][][]a,double b){
-        int a1 = a.length;
-        int a2 = a[0].length;
-        int a3 = a[0][0].length;
-        double[][][] result = new double[a1][a2][a3];
-        for(int i =0; i<a1;i++){
-            for(int j=0;j<a2;j++){
-                for(int k=0;k<a3;k++){
-                    result[i][j][k] = a[i][j][k]+b;
-                }
-            }
-        }
+        int row = a.length;
+        double[][][] result = new double[row][][];
+        for(int i=0;i<row;i++)
+            result[i] = add(a[i],b);
         return result;
     }
-    static double[][][] add(double[][][]a,double[][][]b){
-        int a1 = a.length;
-        int a2 = a[0].length;
-        int a3 = a[0][0].length;
-        double[][][] result = new double[a1][a2][a3];
-        for(int i =0; i<a1;i++){
-            for(int j=0;j<a2;j++){
-                for(int k=0;k<a3;k++){
-                    result[i][j][k] = a[i][j][k]+b[i][j][k];
-                }
-            }
-        }
+    static double[][] add(double[][]a,double b){
+        int row = a.length;
+        double[][] result = new double[row][];
+        for(int i=0;i<row;i++)
+            result[i] = add(a[i],b);
+        return result;
+    }
+    static double[] add(double[]a,double b){
+        int row = a.length;
+        double[] result = new double[row];
+        for(int i=0;i<row;i++)
+            result[i] = a[i]+b;
         return result;
     }
     static double[][] conv_valid(double[][][] a,double[][][] b){
@@ -612,6 +612,18 @@ public class util {
             int index = rnd.nextInt(i + 1);
             // Simple swap
             double[][] a = ar[index];
+            ar[index] = ar[i];
+            ar[i] = a;
+        }
+    }
+    static void shuffleArray(int[] ar)
+    {
+        Random rnd = new Random();
+        for (int i = ar.length - 1; i > 0; i--)
+        {
+            int index = rnd.nextInt(i + 1);
+            // Simple swap
+            int a = ar[index];
             ar[index] = ar[i];
             ar[i] = a;
         }

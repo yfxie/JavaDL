@@ -5,7 +5,13 @@ import java.io.File;
  */
 public class Test {
     public static void main(String[] arg){
-
+        /*
+        int a =2;
+        double b = 3.6*a;
+        System.out.println(b);
+        if(true){
+            throw new IllegalArgumentException("a");
+        }*/
         File folder = new File("/Users/JSON/Dropbox/cloudcity/gender");
         File[] files = folder.listFiles();
         int size = 2700;
@@ -48,7 +54,7 @@ public class Test {
         cnn_opt opt = new cnn_opt();
         opt.alpha=1;
         opt.batchsize=50;
-        opt.numepochs =100;
+        opt.numepochs =5;
 
         cnn_net net = new cnn_net();
         net.layers = layers;
